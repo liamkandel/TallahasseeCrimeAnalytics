@@ -1,0 +1,7 @@
+streamlit
+pandas
+requests
+sqlite3
+python-dotenv
+plotly
+pydeck
