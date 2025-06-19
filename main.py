@@ -164,7 +164,7 @@ else:
 # Analytics: Most dangerous times of day
 st.subheader("Most Dangerous Times of Day (All Time)")
 if 'eventdate_clean' in hist_df:
-    hist_df['hour'] = hist_df['eventdate_clean'].dt.hour
+    # hist_df['hour'] = hist_df['eventdate_clean'].dt.hour
     hour_counts = hist_df['hour'].value_counts().sort_index()
     st.bar_chart(hour_counts)
     hour_counts_df = hour_counts.reset_index()
