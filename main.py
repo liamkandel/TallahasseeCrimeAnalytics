@@ -6,11 +6,8 @@ from datetime import datetime
 import re
 import pydeck as pdk
 import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
-url = os.getenv("DATA_API_URL")
+url = st.secrets.get('url')
 
 # API status indicator
 try:
