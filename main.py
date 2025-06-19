@@ -67,7 +67,7 @@ for incident in data:
             incident.get('eventheadline'),
             incident.get('eventaddress'),
             incident.get('ipk'),
-            datetime.utcnow().isoformat()
+            datetime.now(datetime.timezone.utc).isoformat()
         ))
     except Exception as e:
         pass  # Optionally log errors
@@ -167,7 +167,9 @@ if 'eventdate_clean' in hist_df:
     hist_df['hour'] = hist_df['eventdate_clean'].dt.hour
     hour_counts = hist_df['hour'].value_counts().sort_index()
     st.bar_chart(hour_counts)
-    st.dataframe(hour_counts.reset_index().rename(columns={'index': 'Hour', 'hour': 'Incident Count'}))
+    hour_counts_df = hour_counts.reset_index()
+    hour_counts_df.columns = ['Hour of day', 'Incident count']
+    st.dataframe(hour_counts_df)
 else:
     st.info("No valid event date data for time-of-day analysis.")
 
