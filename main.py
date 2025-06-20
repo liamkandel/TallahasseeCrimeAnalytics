@@ -165,11 +165,18 @@ st.markdown("""
 The `ipk` field represents the priority or severity of each incident, as assigned by the Tallahassee Police Department. Lower values (e.g., 1 or 2) typically indicate higher priority or more urgent incidents, while higher values (e.g., 3 or 4) indicate lower priority. This helps identify which incidents require the most immediate attention.
 """)
 
+ipk_label_map = {
+    '1': '1 (Least severe)',
+    '2': '2 (Less severe)',
+    '3': '3 (More severe)',
+    '4': '4 (Most severe)'
+}
 ipk_counts = hist_df['ipk'].value_counts().sort_index()
+labels = [ipk_label_map.get(str(ipk), str(ipk)) for ipk in ipk_counts.index]
 st.plotly_chart({
     "data": [{
         "values": ipk_counts.values,
-        "labels": ipk_counts.index,
+        "labels": labels,
         "type": "pie",
         "hole": .3
     }],
