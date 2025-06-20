@@ -145,7 +145,7 @@ else:
     st.info("Not enough data for heatmap.")
 
 # Analytics: Most dangerous times of day
-st.subheader("Most Dangerous Times of Day (All Time)")
+st.subheader("Times of day with highest incident count (All Time)")
 if 'eventdate_clean' in hist_df:
     hist_df['hour'] = hist_df['eventdate_clean'].dt.hour
     hour_counts = hist_df['hour'].value_counts().sort_index()
@@ -175,6 +175,6 @@ st.plotly_chart({
     }],
     "layout": {"title": "Incidents by Severity (ipk)"}
 })
-st.dataframe(ipk_counts.reset_index().rename(columns={'index': 'ipk', 'ipk': 'Incident Count'}))
+# st.dataframe(ipk_counts.reset_index().rename(columns={'index': 'ipk', 'ipk': 'Incident Count'}))
 
 # You can add more analytics below, e.g., by time, by area, etc.
