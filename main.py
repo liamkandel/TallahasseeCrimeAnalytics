@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import requests
-import sqlite3
 from datetime import datetime
 import re
 import pydeck as pdk
 import os
+from supabase import create_client, Client
 
 url = st.secrets.get('url')
 
@@ -26,52 +26,35 @@ df['y'] = df['y'].astype(float)
 
 st.title("Tallahassee Police Active Incidents")
 
-# Connect to SQLite database (creates file if it doesn't exist)
-conn = sqlite3.connect('incidents.db')
-c = conn.cursor()
-
-# Create table if it doesn't exist
-c.execute('''
-    CREATE TABLE IF NOT EXISTS incidents (
-        eventinc TEXT PRIMARY KEY,
-        eventnum TEXT,
-        eventdate TEXT,
-        eventid TEXT,
-        x REAL,
-        y REAL,
-        eventdesc TEXT,
-        eventheadline TEXT,
-        eventaddress TEXT,
-        ipk TEXT,
-        fetched_at TEXT
-    )
-''')
+# Load Supabase credentials from Streamlit secrets
+data_url = st.secrets["supabase_url"]
+data_key = st.secrets["supabase_key"]
+supabase: Client = create_client(data_url, data_key)
 
 # Insert new incidents, skip duplicates
 for incident in data:
     if 'eventinc' not in incident:
         continue  # skip incomplete records
+    # Check if incident already exists
+    existing = supabase.table('incidents').select('eventinc').eq('eventinc', incident.get('eventinc')).execute()
+    if existing.data:
+        continue  # skip duplicates
     try:
-        c.execute('''
-            INSERT OR IGNORE INTO incidents (
-                eventinc, eventnum, eventdate, eventid, x, y, eventdesc, eventheadline, eventaddress, ipk, fetched_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            incident.get('eventinc'),
-            incident.get('eventnum'),
-            incident.get('eventdate'),
-            incident.get('eventid'),
-            float(incident.get('x', 0)),
-            float(incident.get('y', 0)),
-            incident.get('eventdesc'),
-            incident.get('eventheadline'),
-            incident.get('eventaddress'),
-            incident.get('ipk'),
-            datetime.now(datetime.timezone.utc).isoformat()
-        ))
+        supabase.table('incidents').insert({
+            'eventinc': incident.get('eventinc'),
+            'eventnum': incident.get('eventnum'),
+            'eventdate': incident.get('eventdate'),
+            'eventid': incident.get('eventid'),
+            'x': float(incident.get('x', 0)),
+            'y': float(incident.get('y', 0)),
+            'eventdesc': incident.get('eventdesc'),
+            'eventheadline': incident.get('eventheadline'),
+            'eventaddress': incident.get('eventaddress'),
+            'ipk': incident.get('ipk'),
+            'fetched_at': datetime.now().isoformat()
+        }).execute()
     except Exception as e:
-        pass  # Optionally log errors
-conn.commit()
+        st.error(f"Supabase insert error: {e}")
 
 # Interactive map with clickable markers for active incidents (replaces old map)
 st.subheader("Active Incidents Map (Interactive)")
@@ -114,8 +97,8 @@ else:
 st.subheader("Incident Table")
 st.dataframe(df[['eventdate', 'eventdesc', 'eventaddress']])
 
-# Optionally, you can load all historical data for analytics:
-hist_df = pd.read_sql_query('SELECT * FROM incidents', conn)
+# Load all historical data for analytics
+hist_df = pd.DataFrame(supabase.table('incidents').select('*').execute().data)
 
 # Convert eventdate to datetime for sorting and analytics
 def clean_eventdate(date_str):
