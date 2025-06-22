@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import pydeck as pdk
 import os
@@ -123,26 +123,37 @@ event_counts.columns = ['Event Type', 'Count']
 st.bar_chart(event_counts.set_index('Event Type'))
 st.dataframe(event_counts)
 
-# Heatmap for areas with highest crime rate
-st.subheader("Crime Concentration Heatmap (All Time)")
-if not hist_df[['y', 'x']].dropna().empty:
-    heatmap_layer = pdk.Layer(
-        "HeatmapLayer",
-        data=hist_df,
-        get_position='[x, y]',
-        aggregation=pdk.types.String("MEAN"),
-        get_weight=1,
-        radiusPixels=60,
-    )
-    view_state = pdk.ViewState(
-        latitude=hist_df['y'].mean(),
-        longitude=hist_df['x'].mean(),
-        zoom=11,
-        pitch=50
-    )
-    st.pydeck_chart(pdk.Deck(layers=[heatmap_layer], initial_view_state=view_state))
+# Heatmap for areas with highest crime rate (last 24 hours)
+st.subheader("Crime Concentration Heatmap (Last 24 Hours)")
+
+if 'eventdate_clean' in hist_df:
+    last_24h = datetime.now() - timedelta(hours=24)
+    recent_df = hist_df[hist_df['eventdate_clean'] >= last_24h]
+    if not recent_df[['y', 'x']].dropna().empty:
+        heatmap_layer = pdk.Layer(
+            "HeatmapLayer",
+            data=recent_df,
+            get_position='[x, y]',
+            aggregation=pdk.types.String("MEAN"),
+            get_weight=1,
+            radiusPixels=60,
+        )
+        view_state = pdk.ViewState(
+            latitude=recent_df['y'].mean(),
+            longitude=recent_df['x'].mean(),
+            zoom=11,
+            pitch=50
+        )
+        st.pydeck_chart(pdk.Deck(layers=[heatmap_layer], initial_view_state=view_state))
+        
+        # Show table of events used in the heatmap
+        #st.subheader("Events in Last 24 Hours (Heatmap Data)")
+        #st.dataframe(recent_df[['eventdate', 'eventdesc', 'eventaddress', 'x', 'y']].sort_values('eventdate', ascending=False))
+        
+    else:
+        st.info("Not enough data for heatmap in the last 24 hours.")
 else:
-    st.info("Not enough data for heatmap.")
+    st.info("No valid event date data for heatmap.")
 
 # Analytics: Most dangerous times of day
 st.subheader("Times of day with highest incident count (All Time)")
