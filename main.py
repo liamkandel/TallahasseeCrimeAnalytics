@@ -196,3 +196,9 @@ st.plotly_chart({
 # st.dataframe(ipk_counts.reset_index().rename(columns={'index': 'ipk', 'ipk': 'Incident Count'}))
 
 # You can add more analytics below, e.g., by time, by area, etc.
+
+# Data source attribution
+st.markdown("""
+---
+**Data Source:** [Tallahassee Police Active Incidents](https://www.talgov.com/gis/tops/)
+""")
